@@ -2,7 +2,7 @@ package com.yujinwunz.spazpong;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
  * Created by yujinwunz on 8/03/2017.
  */
 
-public class Menu implements Screen {
+public class Menu extends ScreenAdapter {
 
 	Stage stage;
 
@@ -117,28 +117,8 @@ public class Menu implements Screen {
 	}
 
 	@Override
-	public void resize(int width, int height) {
-
-	}
-
-	@Override
-	public void pause() {
-
-	}
-
-	@Override
-	public void resume() {
-
-	}
-
-	@Override
 	public void hide() {
-
-	}
-
-	@Override
-	public void dispose() {
-
+		Gdx.input.setInputProcessor(null);
 	}
 
 	public static class MenuItem {

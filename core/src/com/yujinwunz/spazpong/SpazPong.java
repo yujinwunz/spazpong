@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import java.util.concurrent.Callable;
 
@@ -17,11 +18,15 @@ public class SpazPong extends Game {
 
 	SpriteBatch batch;
 	Texture img;
+	ShapeRenderer shapeRenderer;
 
 	@Override
 	public void create () {
+		batch = new SpriteBatch();
 		this.setScreen(makeMainMenu());
 		camera.setToOrtho(false, 800, 480);
+		shapeRenderer = new ShapeRenderer();
+		shapeRenderer.setProjectionMatrix(camera.combined);
 	}
 
 	@Override
@@ -37,10 +42,12 @@ public class SpazPong extends Game {
 
 
 	public Menu makeMainMenu() {
+		final SpazPong me = this;
 		return new Menu(this,
 				Menu.createMenuItem("Single Player", new Callable() {
 					@Override
 					public Object call() throws Exception {
+						setScreen(new SpazPongGame(me));
 						return null;
 					}
 				}, true),
