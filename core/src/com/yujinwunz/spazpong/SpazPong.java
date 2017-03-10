@@ -47,7 +47,7 @@ public class SpazPong extends Game {
 				Menu.createMenuItem("Single Player", new Callable() {
 					@Override
 					public Object call() throws Exception {
-						setScreen(new SpazPongGame(me));
+						setScreen(new FireTouch(me));
 						return null;
 					}
 				}, true),
