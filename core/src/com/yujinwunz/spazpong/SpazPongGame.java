@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.utils.Align;
 
 import java.util.Random;
 
@@ -23,12 +25,12 @@ import static com.badlogic.gdx.math.MathUtils.random;
 public class SpazPongGame extends ScreenAdapter {
 
 	private static final float MAX_DELTA = 0.0002f;
-	private static final float PADDLE_MAX_SPEED = 400f;
+	private static final float PADDLE_MAX_SPEED = 800f;
 	private static final float PADDLE_EDGE_NORMAL = (float)Math.PI/6;
 	private static final float BALL_SIZE = 30f;
 	private static final int PADDLE_INPUT_MARGIN = 300;
 	private static final int PADDLE_SIZE = 130;
-	private static final int PADDLE_THICKNESS = 50;
+	private static final int PADDLE_THICKNESS = 52;
 
 	private static final int PLAYER_1_INDEX = 0;
 	private static final int PLAYER_2_INDEX = 1;
@@ -38,7 +40,8 @@ public class SpazPongGame extends ScreenAdapter {
 	private Field field;
 	private SpazPong game;
 	private boolean servingRight;
-	private boolean paused;
+	private boolean paused = true;
+	private BitmapFont font;
 
 	private int score[];
 
@@ -51,6 +54,7 @@ public class SpazPongGame extends ScreenAdapter {
 		this.field = new Field(50, 20, 700, 440);
 		this.score = new int[2];
 		servingRight = true;
+		this.font = game.assetManager.get(Assets.FONT_SMALL);
 		reset_round(servingRight);
 	}
 
@@ -63,8 +67,9 @@ public class SpazPongGame extends ScreenAdapter {
 	public void progress(float delta) {
 		if (delta > MAX_DELTA) {
 			for (float consumed = 0; consumed < delta; consumed += MAX_DELTA) {
-				progress(Math.min(MAX_DELTA, delta - consumed));
+				if (!paused) progress(Math.min(MAX_DELTA, delta - consumed));
 			}
+			return;
 		}
 
 		for (Paddle p : paddles) {
@@ -110,16 +115,15 @@ public class SpazPongGame extends ScreenAdapter {
 
 	public void showScoreMenu(String title) {
 		pauseGame();
-		servingRight = !servingRight;
-		reset_round(servingRight);
-
 		final SpazPongGame me = this;
 		game.setScreen(new Menu(title + "\n" + "Score:\n" + score[0] + "      " + score[1], game,
 				new Menu.MenuItem("Continue", new Callable() {
 					@Override
 					public Object call() throws Exception {
 						game.setScreen(me);
-						me.resumeGame();
+						pauseGame();
+						servingRight = !servingRight;
+						reset_round(servingRight);
 						return null;
 					}
 				}, true),
@@ -149,6 +153,16 @@ public class SpazPongGame extends ScreenAdapter {
 			p.render(game.shapeRenderer, game.spriteBatch);
 		}
 		ball.render(game.shapeRenderer, game.spriteBatch);
+
+		if (this.paused) {
+			game.spriteBatch.begin();
+			font.setColor(new Color(0, 0.2f, 0.25f, 0.5f));
+			font.draw(game.spriteBatch, "Tap to start", 100, 200, 600, Align.center, false);
+			game.spriteBatch.end();
+		}
+		if (Gdx.input.isTouched()) {
+			this.resumeGame();
+		}
 	}
 
 	static class SpazPongOptions {
@@ -161,7 +175,7 @@ public class SpazPongGame extends ScreenAdapter {
 
 	static class Ball implements GameObject {
 		Random random = new Random();
-		float x, y, a, v = 400;
+		float x, y, a, v = 800;
 		int bounces = 0;
 		float size;
 		TextureRegion ball;
@@ -273,7 +287,7 @@ public class SpazPongGame extends ScreenAdapter {
 			blinkingTimeRemaining = Math.max(0, blinkingTimeRemaining - delta);
 			hittingTimeRemaining = Math.max(0, hittingTimeRemaining - delta);
 			if (random.nextFloat() * 2.0 < delta) {
-				blinkingTimeRemaining = 0.2f;
+				blinkingTimeRemaining = 0.1f;
 			}
 		}
 		public float getNormal(float y) {
@@ -292,12 +306,12 @@ public class SpazPongGame extends ScreenAdapter {
 			).contains(b.x, b.y);
 			// We also need to collide with the circular face.
 			if (faceRight) {
-				result = result && Math.pow(b.x - (x + thickness/2 - thickness*3), 2) + Math.pow(b.y - y, 2) < Math.pow(thickness*3, 2);
+				result = result && Math.pow(b.x - (x + thickness/2 - thickness*3), 2) + Math.pow(b.y - y, 2) < Math.pow(thickness*3.2, 2);
 			} else {
-				result = result && Math.pow(b.x - (x - thickness/2 + thickness*3), 2) + Math.pow(b.y - y, 2) < Math.pow(thickness*3, 2);
+				result = result && Math.pow(b.x - (x - thickness/2 + thickness*3), 2) + Math.pow(b.y - y, 2) < Math.pow(thickness*3.2, 2);
 			}
 			if (result) {
-				hittingTimeRemaining = 0.2f;
+				hittingTimeRemaining = 0.1f;
 			}
 			return result;
 		}
