@@ -1,6 +1,5 @@
 package com.yujinwunz.spazpong;
 
-import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
@@ -10,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -17,7 +17,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 
 /**
  * Created by yujinwunz on 8/03/2017.
@@ -36,20 +35,22 @@ public class Menu extends ScreenAdapter {
 	public static final int BUTTON_PADDING = 30;
 
 	private ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
-	private ApplicationListener game;
+	private SpazPong game;
 
 
 	// Style objects reused across menus
-	static BitmapFont font_small;
-	static BitmapFont font_large;
-	static Skin skin;
-	static {
+	BitmapFont font_small;
+	BitmapFont font_large;
+	Skin skin;
+
+	void loadResources() {
 		skin = new Skin();
-		TextureAtlas buttonAtlas = new TextureAtlas(Gdx.files.internal("buttons/buttons.pack.atlas"));
+
+		TextureAtlas buttonAtlas = game.assetManager.get(Assets.BUTTON_ATLAS);
 		skin.addRegions(buttonAtlas);
-		font_small = new BitmapFont(Gdx.files.internal("fonts/prstartk.fnt"));
-		font_large = new BitmapFont(Gdx.files.internal("fonts/prstartk-large.fnt"));
-		for (String drawableName: new String[]{"up-button", "down-button", "checked-button"}) {
+		font_small = game.assetManager.get(Assets.FONT_SMALL);
+		font_large = game.assetManager.get(Assets.FONT_LARGE);
+		for (String drawableName: new String[]{Assets.Button.BUTTON_UP, Assets.Button.BUTTON_DOWN, Assets.Button.BUTTON_CHECKED}) {
 			Drawable d = skin.getDrawable(drawableName);
 			d.setBottomHeight(BUTTON_PADDING);
 			d.setLeftWidth(BUTTON_PADDING);
@@ -58,22 +59,36 @@ public class Menu extends ScreenAdapter {
 		}
 	}
 
-	public Menu(ApplicationListener game, MenuItem... menuItems) {
+	public Menu(String title, SpazPong game, MenuItem... menuItems) {
 		for (MenuItem m : menuItems) {
 			this.menuItems.add(m);
 		}
 		this.game = game;
+		loadResources();
 
 		stage = new Stage();
 		Table table = new Table();
 		table.setFillParent(true);
 		table.center();
 
+		Label titleLabel = new Label(title,
+				new Label.LabelStyle(
+						font_large,
+						new Color(
+								BACKGROUND_COLOUR_R/2,
+								BACKGROUND_COLOUR_G/2,
+								BACKGROUND_COLOUR_B/2, 1)
+				)
+		);
+		titleLabel.setWrap(true);
+
+		table.add(titleLabel).center().width(table.getPrefWidth());
+		table.row().padBottom(20f);
 
 		TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
-		textButtonStyle.up = skin.getDrawable("up-button");
-		textButtonStyle.down = skin.getDrawable("down-button");
-		textButtonStyle.checked = skin.getDrawable("checked-button");
+		textButtonStyle.up = skin.getDrawable(Assets.Button.BUTTON_UP);
+		textButtonStyle.down = skin.getDrawable(Assets.Button.BUTTON_DOWN);
+		textButtonStyle.checked = skin.getDrawable(Assets.Button.BUTTON_CHECKED);
 		textButtonStyle.checkedFontColor =
 				new Color(BACKGROUND_COLOUR_R, BACKGROUND_COLOUR_G, BACKGROUND_COLOUR_B, 1);
 		textButtonStyle.downFontColor =

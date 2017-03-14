@@ -1,0 +1,55 @@
+
+sprites.pack.png
+size: 512,256
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+ball
+  rotate: false
+  xy: 2, 2
+  size: 50, 50
+  orig: 50, 50
+  offset: 0, 0
+  index: -1
+paddle_blink_left
+  rotate: false
+  xy: 2, 54
+  size: 52, 130
+  orig: 52, 130
+  offset: 0, 0
+  index: -1
+paddle_blink_right
+  rotate: false
+  xy: 56, 54
+  size: 52, 130
+  orig: 52, 130
+  offset: 0, 0
+  index: -1
+paddle_hit_left
+  rotate: false
+  xy: 218, 54
+  size: 50, 130
+  orig: 50, 130
+  offset: 0, 0
+  index: -1
+paddle_hit_right
+  rotate: false
+  xy: 270, 54
+  size: 50, 130
+  orig: 50, 130
+  offset: 0, 0
+  index: -1
+paddle_left
+  rotate: false
+  xy: 110, 54
+  size: 52, 130
+  orig: 52, 130
+  offset: 0, 0
+  index: -1
+paddle_right
+  rotate: false
+  xy: 164, 54
+  size: 52, 130
+  orig: 52, 130
+  offset: 0, 0
+  index: -1

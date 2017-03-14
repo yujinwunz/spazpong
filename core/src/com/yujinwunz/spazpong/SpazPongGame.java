@@ -4,11 +4,17 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
 import java.util.Random;
+
+import static com.badlogic.gdx.math.MathUtils.random;
 
 /**
  * Created by yujinwunz on 10/03/2017.
@@ -16,26 +22,42 @@ import java.util.Random;
 
 public class SpazPongGame extends ScreenAdapter {
 
-	private static final float MAX_DELTA = 0.02f;
-	private static final float PADDLE_MAX_SPEED = 800f;
-	private static final float PADDLE_EDGE_NORMAL = (float)Math.PI/2;
-	private static final float BALL_SIZE = 40f;
+	private static final float MAX_DELTA = 0.0002f;
+	private static final float PADDLE_MAX_SPEED = 400f;
+	private static final float PADDLE_EDGE_NORMAL = (float)Math.PI/4;
+	private static final float BALL_SIZE = 30f;
 	private static final int PADDLE_INPUT_MARGIN = 300;
-	private static final int PADDLE_SIZE = 80;
-	private static final int PADDLE_THICKNESS = 20;
+	private static final int PADDLE_SIZE = 130;
+	private static final int PADDLE_THICKNESS = 30;
+
+	private static final int PLAYER_1_INDEX = 0;
+	private static final int PLAYER_2_INDEX = 1;
 
 	private Ball ball;
 	private Paddle[] paddles;
 	private Field field;
 	private SpazPong game;
+	private boolean servingRight;
+	private boolean paused;
+
+	private int score[];
 
 	public SpazPongGame(SpazPong game, SpazPongOptions options) {
-		this.ball = new Ball(400, 240, BALL_SIZE);
+		this.game = game;
+		this.ball = new Ball(this, 400, 240, 0, BALL_SIZE);
 		this.paddles = new Paddle[2];
 		this.paddles[0] = new Paddle(true, options.singlePlayer, 30, 240, this);
-		this.paddles[1] = new Paddle(false, false, 30, 240, this);
+		this.paddles[1] = new Paddle(false, false, 770, 240, this);
 		this.field = new Field(10, 10, 780, 460);
-		this.game = game;
+		this.score = new int[2];
+		servingRight = true;
+		reset_round(servingRight);
+	}
+
+	public void reset_round(boolean servingRight) {
+		this.ball = new Ball(this, 400, 240, servingRight ? (float)Math.PI/2 : -(float)Math.PI/2, BALL_SIZE);
+		this.paddles[0].y = 240;
+		this.paddles[1].y = 240;
 	}
 
 	public void progress(float delta) {
@@ -68,22 +90,65 @@ public class SpazPongGame extends ScreenAdapter {
 		// Winning/losing conditions
 		if (ball.x - ball.size/2 < field.x) {
 			// Player 2 (right) wins
+			score[PLAYER_2_INDEX]++;
+			scoreMenu("Player 2 (right) wins");
 		} else if (ball.x + ball.size/2 > field.x + field.width) {
 			// Player 1 (left) wins
+			score[PLAYER_1_INDEX]++;
+			scoreMenu("Player 1 (left) wins");
 		}
 	}
 
+	private void pauseGame() {
+		this.paused = true;
+	}
+
+	private void resumeGame() {
+		this.paused = false;
+	}
+
+
+	public void scoreMenu(String title) {
+		pauseGame();
+		servingRight = !servingRight;
+		reset_round(servingRight);
+
+		final SpazPongGame me = this;
+		game.setScreen(new Menu(title + "\n" + "Score: " + score[0] + "    " + score[1], game,
+				new Menu.MenuItem("Continue", new Callable() {
+					@Override
+					public Object call() throws Exception {
+						game.setScreen(me);
+						me.resumeGame();
+						return null;
+					}
+				}, true),
+				new Menu.MenuItem("Quit", new Callable() {
+					@Override
+					public Object call() throws Exception {
+						game.quit();
+						return null;
+					}
+				})
+		));
+	}
+
+
 	@Override
 	public void render(float delta) {
-		Gdx.gl.glClearColor(0.7f, 0.4f, 0.5f, 1);
+		Gdx.gl.glClearColor(0.0f, 0.4f, 0.5f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		progress(delta);
 
-		field.render(game.shapeRenderer);
-		for (Paddle p : paddles) {
-			p.render(game.shapeRenderer);
+		if (!this.paused) {
+			progress(delta);
 		}
-		ball.render(game.shapeRenderer);
+
+		field.render(game.shapeRenderer, game.spriteBatch);
+
+		for (Paddle p : paddles) {
+			p.render(game.shapeRenderer, game.spriteBatch);
+		}
+		ball.render(game.shapeRenderer, game.spriteBatch);
 	}
 
 	static class SpazPongOptions {
@@ -96,25 +161,30 @@ public class SpazPongGame extends ScreenAdapter {
 
 	static class Ball implements GameObject {
 		Random random = new Random();
-		float x, y, a, v = 600;
+		float x, y, a, v = 400;
 		int bounces = 0;
 		float size;
-		public Ball(float x, float y, float size) {
+		TextureRegion ball;
+
+		public Ball(SpazPongGame game, float x, float y, float a, float size) {
 			this.x = x;
 			this.y = y;
-			this.size = size;
+			this.a = a;
+			Skin skin = new Skin();
+			skin.addRegions(game.game.assetManager.get(Assets.SPRITE_ATLAS, TextureAtlas.class));
+			ball = skin.getRegion(Assets.Sprites.BALL);
+			this.size = ball.getRegionHeight();
 		}
-		public void render(ShapeRenderer renderer) {
-			renderer.begin(ShapeRenderer.ShapeType.Filled);
-			renderer.setColor(new Color(0.4f, 0.1f, 0.1f, 1));
-			renderer.circle(x, y, size);
-			renderer.end();
+		public void render(ShapeRenderer renderer, SpriteBatch batch) {
+			batch.begin();
+			batch.draw(ball, x - ball.getRegionWidth()/2, y - ball.getRegionHeight()/2);
+			batch.end();
 		}
 		public void tick(float delta) {
-			x += Math.sin(a) * delta;
-			y += Math.cos(a) * delta;
+			x += Math.sin(a) * delta * v;
+			y += Math.cos(a) * delta * v;
 			// Spaziness go.
-			a += Math.abs(random.nextFloat()) % Math.PI * bounces * delta;
+			//a += (random.nextFloat() * Math.PI - Math.PI / 2) * bounces * delta / 10;
 			while (a > Math.PI * 2) {
 				a -= Math.PI * 2;
 			}
@@ -123,12 +193,13 @@ public class SpazPongGame extends ScreenAdapter {
 			}
 		}
 		public void bounce(float normal) {
-			if (Math.abs((normal - a + Math.PI * 100) % (Math.PI*2)) > Math.PI/2) {
-				float normalDiff = (float)((normal - a + Math.PI * 100) % (Math.PI*2));
+			float normalDiff = (float)((normal - a + Math.PI * 100) % (Math.PI*2));
+			if (normalDiff > Math.PI/2 && normalDiff < Math.PI/2*3) {
+
 				a = (float)(normal + Math.PI + normalDiff);
 				this.bounces += 1;
 
-				this.v += 20;
+				this.v += 8;
 			} // Ignore reflection when ball is moving away from normal already
 		}
 	}
@@ -138,18 +209,42 @@ public class SpazPongGame extends ScreenAdapter {
 		float x, y, size = PADDLE_SIZE, thickness = PADDLE_THICKNESS;
 		SpazPongGame game;
 		boolean faceRight;
-		public void render(ShapeRenderer renderer) {
-			renderer.begin(ShapeRenderer.ShapeType.Filled);
-			renderer.setColor(new Color(0.2f, 0.05f, 0.05f, 1));
-			renderer.rect(x - thickness/2, y - size/2, thickness, size);
-			renderer.end();
+		float hittingTimeRemaining = 0;
+		float blinkingTimeRemaining = 0;
+		Skin skin;
+		TextureRegion paddle, paddle_blink, paddle_hit;
+
+		public void render(ShapeRenderer renderer, SpriteBatch batch) {
+			Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+			batch.begin();
+			float xpos = x - paddle.getRegionWidth() / 2;
+			float ypos = y - paddle.getRegionHeight() / 2;
+			if (this.hittingTimeRemaining > 0) {
+				batch.draw(paddle_hit, xpos, ypos);
+			} else if (this.blinkingTimeRemaining > 0) {
+				batch.draw(paddle_blink, xpos, ypos);
+			} else {
+				batch.draw(paddle, xpos, ypos);
+			}
+			batch.end();
 		}
 		public Paddle(boolean faceRight, boolean isAi, float x, float y, SpazPongGame game) {
-			this.isAi = true;
+			this.isAi = isAi;
 			this.game = game;
 			this.x = x;
 			this.y = y;
 			this.faceRight = faceRight;
+			this.skin = new Skin();
+			skin.addRegions(game.game.assetManager.get(Assets.SPRITE_ATLAS, TextureAtlas.class));
+			if (!faceRight) {
+				paddle = skin.getRegion(Assets.Sprites.PADDLE_RIGHT);
+				paddle_blink = skin.getRegion(Assets.Sprites.PADDLE_RIGHT_BLINK);
+				paddle_hit = skin.getRegion(Assets.Sprites.PADDLE_RIGHT_HIT);
+			} else {
+				paddle = skin.getRegion(Assets.Sprites.PADDLE_LEFT);
+				paddle_blink = skin.getRegion(Assets.Sprites.PADDLE_LEFT_BLINK);
+				paddle_hit = skin.getRegion(Assets.Sprites.PADDLE_LEFT_HIT);
+			}
 		}
 		public void tick(float delta) {
 			if (this.isAi) {
@@ -173,6 +268,12 @@ public class SpazPongGame extends ScreenAdapter {
 					}
 				}
 			}
+
+			blinkingTimeRemaining = Math.max(0, blinkingTimeRemaining - delta);
+			hittingTimeRemaining = Math.max(0, hittingTimeRemaining - delta);
+			if (random.nextFloat() * 2.0 < delta) {
+				blinkingTimeRemaining = 0.2f;
+			}
 		}
 		public float getNormal(float y) {
 			if (faceRight) {
@@ -182,12 +283,16 @@ public class SpazPongGame extends ScreenAdapter {
 			}
 		}
 		public boolean collidesWithBall(Ball b) {
-			return new Rectangle(
+			boolean result = new Rectangle(
 					x - thickness/2 - b.size/2,
 					y - size/2 - b.size/2,
 					thickness + b.size,
 					size + b.size
 			).contains(b.x, b.y);
+			if (result) {
+				hittingTimeRemaining = 0.2f;
+			}
+			return result;
 		}
 	}
 
@@ -199,7 +304,7 @@ public class SpazPongGame extends ScreenAdapter {
 			this.x = x;
 			this.y = y;
 		}
-		public void render(ShapeRenderer shapeRenderer) {
+		public void render(ShapeRenderer shapeRenderer, SpriteBatch spriteBatch) {
 			shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 			shapeRenderer.setColor(new Color(0.4f, 0.1f, 0.15f, 1));
 			shapeRenderer.rect(x, y, width, height);
@@ -209,20 +314,20 @@ public class SpazPongGame extends ScreenAdapter {
 			// Do nothing
 		}
 		public boolean collidesWithBall(Ball b) {
-			return b.y - b.size < y || b.y + b.size > y + height;
+			return b.y - b.size/2 < y || b.y + b.size/2 > y + height;
 		}
 		public float getNormal(float y) {
 			if (y - this.y < this.y + height - y) {
 				// Closer to top
-				return (float)Math.PI;
-			} else {
 				return 0;
+			} else {
+				return (float)Math.PI;
 			}
 		}
 	}
 
 	interface GameObject {
 		void tick(float delta);
-		void render(ShapeRenderer renderer);
+		void render(ShapeRenderer renderer, SpriteBatch batch);
 	}
 }

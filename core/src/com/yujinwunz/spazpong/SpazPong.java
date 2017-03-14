@@ -1,13 +1,14 @@
 package com.yujinwunz.spazpong;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
-import java.util.concurrent.Callable;
 
 public class SpazPong extends Game {
 	public static int height = 0, width = 0;
@@ -16,17 +17,24 @@ public class SpazPong extends Game {
 
 	OrthographicCamera camera = new OrthographicCamera();
 
-	SpriteBatch batch;
+	SpriteBatch spriteBatch;
 	Texture img;
 	ShapeRenderer shapeRenderer;
+	AssetManager assetManager;
 
 	@Override
 	public void create () {
-		batch = new SpriteBatch();
-		this.setScreen(makeMainMenu());
+		Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		Gdx.app.debug("Spazpong", "Loading assets");
+		assetManager = new AssetManager();
+		maintainAssets();
+
 		camera.setToOrtho(false, 800, 480);
 		shapeRenderer = new ShapeRenderer();
 		shapeRenderer.setProjectionMatrix(camera.combined);
+		spriteBatch = new SpriteBatch();
+		spriteBatch.setProjectionMatrix(camera.combined);
+		this.setScreen(makeMainMenu());
 	}
 
 	@Override
@@ -43,17 +51,18 @@ public class SpazPong extends Game {
 
 	public Menu makeMainMenu() {
 		final SpazPong me = this;
-		return new Menu(this,
+		return new Menu("Spaz Pong!", this,
 				Menu.createMenuItem("Single Player", new Callable() {
 					@Override
 					public Object call() throws Exception {
-						setScreen(new FireTouch(me));
+						setScreen(new SpazPongGame(me, new SpazPongGame.SpazPongOptions(true)));
 						return null;
 					}
 				}, true),
 				Menu.createMenuItem("2 Player", new Callable() {
 					@Override
 					public Object call() throws Exception {
+						setScreen(new SpazPongGame(me, new SpazPongGame.SpazPongOptions(false)));
 						return null;
 					}
 				}),
@@ -65,6 +74,17 @@ public class SpazPong extends Game {
 					}
 				})
 		);
+	}
+
+	public void maintainAssets() {
+		Assets.stage(assetManager);
+		Gdx.app.debug("SpazPong", "Middle of maintaining assets");
+		Assets.load(assetManager);
+	}
+
+	@Override
+	public void resume() {
+		maintainAssets();
 	}
 
 	public void quit() {
