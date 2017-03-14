@@ -25,7 +25,7 @@ import static com.badlogic.gdx.math.MathUtils.random;
 public class SpazPongGame extends ScreenAdapter {
 
 	private static final float MAX_DELTA = 0.0002f;
-	private static final float PADDLE_MAX_SPEED = 800f;
+	private static final float PADDLE_MAX_SPEED = 900f;
 	private static final float PADDLE_EDGE_NORMAL = (float)Math.PI/6;
 	private static final float BALL_SIZE = 30f;
 	private static final int PADDLE_INPUT_MARGIN = 300;
@@ -213,7 +213,7 @@ public class SpazPongGame extends ScreenAdapter {
 				a = (float)(normal + Math.PI + normalDiff);
 				this.bounces += 1;
 
-				this.v += 8;
+				this.v += 15;
 			} // Ignore reflection when ball is moving away from normal already
 		}
 	}
