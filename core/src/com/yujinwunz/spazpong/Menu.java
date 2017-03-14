@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.utils.Align;
 
 import java.util.ArrayList;
 
@@ -80,10 +81,10 @@ public class Menu extends ScreenAdapter {
 								BACKGROUND_COLOUR_B/2, 1)
 				)
 		);
-		titleLabel.setWrap(true);
+		titleLabel.setAlignment(Align.center);
 
-		table.add(titleLabel).center().width(table.getPrefWidth());
-		table.row().padBottom(20f);
+		table.add(titleLabel);
+		table.row().padBottom(50f);
 
 		TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
 		textButtonStyle.up = skin.getDrawable(Assets.Button.BUTTON_UP);

@@ -24,11 +24,11 @@ public class SpazPongGame extends ScreenAdapter {
 
 	private static final float MAX_DELTA = 0.0002f;
 	private static final float PADDLE_MAX_SPEED = 400f;
-	private static final float PADDLE_EDGE_NORMAL = (float)Math.PI/4;
+	private static final float PADDLE_EDGE_NORMAL = (float)Math.PI/6;
 	private static final float BALL_SIZE = 30f;
 	private static final int PADDLE_INPUT_MARGIN = 300;
 	private static final int PADDLE_SIZE = 130;
-	private static final int PADDLE_THICKNESS = 30;
+	private static final int PADDLE_THICKNESS = 50;
 
 	private static final int PLAYER_1_INDEX = 0;
 	private static final int PLAYER_2_INDEX = 1;
@@ -46,9 +46,9 @@ public class SpazPongGame extends ScreenAdapter {
 		this.game = game;
 		this.ball = new Ball(this, 400, 240, 0, BALL_SIZE);
 		this.paddles = new Paddle[2];
-		this.paddles[0] = new Paddle(true, options.singlePlayer, 30, 240, this);
-		this.paddles[1] = new Paddle(false, false, 770, 240, this);
-		this.field = new Field(10, 10, 780, 460);
+		this.paddles[0] = new Paddle(true, options.singlePlayer, 75, 240, this);
+		this.paddles[1] = new Paddle(false, false, 725, 240, this);
+		this.field = new Field(50, 20, 700, 440);
 		this.score = new int[2];
 		servingRight = true;
 		reset_round(servingRight);
@@ -91,11 +91,11 @@ public class SpazPongGame extends ScreenAdapter {
 		if (ball.x - ball.size/2 < field.x) {
 			// Player 2 (right) wins
 			score[PLAYER_2_INDEX]++;
-			scoreMenu("Player 2 (right) wins");
+			showScoreMenu("Player 2 (right) wins");
 		} else if (ball.x + ball.size/2 > field.x + field.width) {
 			// Player 1 (left) wins
 			score[PLAYER_1_INDEX]++;
-			scoreMenu("Player 1 (left) wins");
+			showScoreMenu("Player 1 (left) wins");
 		}
 	}
 
@@ -108,13 +108,13 @@ public class SpazPongGame extends ScreenAdapter {
 	}
 
 
-	public void scoreMenu(String title) {
+	public void showScoreMenu(String title) {
 		pauseGame();
 		servingRight = !servingRight;
 		reset_round(servingRight);
 
 		final SpazPongGame me = this;
-		game.setScreen(new Menu(title + "\n" + "Score: " + score[0] + "    " + score[1], game,
+		game.setScreen(new Menu(title + "\n" + "Score:\n" + score[0] + "      " + score[1], game,
 				new Menu.MenuItem("Continue", new Callable() {
 					@Override
 					public Object call() throws Exception {
@@ -126,7 +126,7 @@ public class SpazPongGame extends ScreenAdapter {
 				new Menu.MenuItem("Quit", new Callable() {
 					@Override
 					public Object call() throws Exception {
-						game.quit();
+						game.setScreen(game.makeMainMenu());
 						return null;
 					}
 				})
@@ -228,6 +228,7 @@ public class SpazPongGame extends ScreenAdapter {
 			}
 			batch.end();
 		}
+
 		public Paddle(boolean faceRight, boolean isAi, float x, float y, SpazPongGame game) {
 			this.isAi = isAi;
 			this.game = game;
@@ -289,6 +290,12 @@ public class SpazPongGame extends ScreenAdapter {
 					thickness + b.size,
 					size + b.size
 			).contains(b.x, b.y);
+			// We also need to collide with the circular face.
+			if (faceRight) {
+				result = result && Math.pow(b.x - (x + thickness/2 - thickness*3), 2) + Math.pow(b.y - y, 2) < Math.pow(thickness*3, 2);
+			} else {
+				result = result && Math.pow(b.x - (x - thickness/2 + thickness*3), 2) + Math.pow(b.y - y, 2) < Math.pow(thickness*3, 2);
+			}
 			if (result) {
 				hittingTimeRemaining = 0.2f;
 			}
@@ -305,9 +312,12 @@ public class SpazPongGame extends ScreenAdapter {
 			this.y = y;
 		}
 		public void render(ShapeRenderer shapeRenderer, SpriteBatch spriteBatch) {
-			shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-			shapeRenderer.setColor(new Color(0.4f, 0.1f, 0.15f, 1));
-			shapeRenderer.rect(x, y, width, height);
+			shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+			shapeRenderer.setColor(new Color(0.f, 0.2f, 0.25f, 1));
+			shapeRenderer.rectLine(x, y, x+width, y, 5);
+			shapeRenderer.rectLine(x, y, x, y+height, 5);
+			shapeRenderer.rectLine(x+width, y+height, x+width, y, 5);
+			shapeRenderer.rectLine(x+width, y+height, x, y+height, 5);
 			shapeRenderer.end();
 		}
 		public void tick(float delta) {
